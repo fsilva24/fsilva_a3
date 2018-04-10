@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">fsilva_a3</string>
+    <string name="search">Find an weather near you</string>
+    <string name="title_activity_maps">Map</string>
+</resources>
