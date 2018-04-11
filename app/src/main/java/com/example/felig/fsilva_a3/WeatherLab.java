@@ -16,6 +16,10 @@ import java.util.List;
  * Created by felig on 4/10/2018.
  */
 
+/*
+    Keeps track of the Markers and connects them to database
+ */
+
 public class WeatherLab {
     private static WeatherLab sMarkerLab;
 

@@ -11,6 +11,9 @@ import java.util.UUID;
  * Created by felig on 4/10/2018.
  */
 
+/*
+    Uses cursor to store data in database
+ */
 public class WeatherCursor extends CursorWrapper{
     public WeatherCursor(Cursor cursor) {
         super(cursor);

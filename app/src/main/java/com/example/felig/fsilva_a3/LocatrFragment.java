@@ -1,17 +1,13 @@
 package com.example.felig.fsilva_a3;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.view.GravityCompat;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -20,10 +16,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -38,31 +32,28 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import android.support.design.widget.Snackbar;
-import android.widget.RelativeLayout;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Date;
-import java.util.UUID;
 
-import static android.content.ContentValues.TAG;
 
 /**
  * Created by felig on 4/10/2018.
  */
 
-public class LocatrFragment extends SupportMapFragment implements GoogleMap.OnMarkerClickListener{
+/*
+    Most of the code in this fragment.
+ */
+public class LocatrFragment extends SupportMapFragment {
     private GoogleApiClient mClient;
     private GoogleMap mMap;
     private JSONArray weatherJsonObject;
@@ -93,13 +84,9 @@ public class LocatrFragment extends SupportMapFragment implements GoogleMap.OnMa
         return new LocatrFragment();
     }
 
-    @Override
-    public boolean onMarkerClick(final Marker marker) {
-        //CoordinatorLayout coordinator = findViewById(R.id.coordinator_layout);
-
-        return false;
-    }
-
+    /*
+    This is where I load the map and the stored points from the database if there are any.
+     */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -152,6 +139,9 @@ public class LocatrFragment extends SupportMapFragment implements GoogleMap.OnMa
         });
     }
 
+    /*
+    This is where I create the FAB and tell this button which things it is special to go to bottom right corner
+     */
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View mapView = super.onCreateView(inflater, container, savedInstanceState);
         mContainer= new CoordinatorLayout(getActivity());
@@ -169,12 +159,6 @@ public class LocatrFragment extends SupportMapFragment implements GoogleMap.OnMa
                 }
             }
         });
-        /*mFloatingActionButton.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                return false;
-            }
-        });*/
 
         mContainer.addView(mFloatingActionButton);
         CoordinatorLayout.LayoutParams lp = (CoordinatorLayout.LayoutParams) mFloatingActionButton.getLayoutParams();
@@ -196,6 +180,9 @@ public class LocatrFragment extends SupportMapFragment implements GoogleMap.OnMa
         mClient.disconnect();
     }
 
+    /*
+    Just menu creation
+     */
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
@@ -204,6 +191,9 @@ public class LocatrFragment extends SupportMapFragment implements GoogleMap.OnMa
         searchItem.setEnabled(mClient.isConnected());
     }
 
+    /*
+    Listens for buttons being pressed on the menu. Gets information or makes requests based on permissions
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -225,6 +215,9 @@ public class LocatrFragment extends SupportMapFragment implements GoogleMap.OnMa
         }
     }
 
+    /*
+    Self explanatory
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
                                            int[] grantResults) {
@@ -238,6 +231,9 @@ public class LocatrFragment extends SupportMapFragment implements GoogleMap.OnMa
         }
     }
 
+    /*
+    Calls search task
+     */
     private void findWeather() {
         LocationRequest request = LocationRequest.create();
         request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -257,13 +253,19 @@ public class LocatrFragment extends SupportMapFragment implements GoogleMap.OnMa
         }
     }
 
-
+    /*
+    Self explanatory
+     */
     private boolean checkPermission() {
         int result = ContextCompat
                 .checkSelfPermission(getActivity(), LOCATION_PERMISSIONS[0]);
         return result == PackageManager.PERMISSION_GRANTED;
     }
 
+    /*
+    Adds markers to map.
+    Zooms in to area of interest
+     */
     private void updateUI() {
         if (mMap == null || mMapItem == null) {
             return;
@@ -276,7 +278,6 @@ public class LocatrFragment extends SupportMapFragment implements GoogleMap.OnMa
                 .position(myPoint)
                 .title(myPoint.toString());
         mMap.addMarker(myMarker).setTag("You were here: " + mMapItem.getDateandTime() + "\nTemp: " + mMapItem.getTemperature() + "(" + mMapItem.getWeather() + ")" );
-        //mMap.setOnMarkerClickListener(this);
 
         LatLngBounds bounds = new LatLngBounds.Builder()
                 .include(itemPoint)
@@ -288,8 +289,11 @@ public class LocatrFragment extends SupportMapFragment implements GoogleMap.OnMa
     }
 
 
+    /*
+    Does the heavy lifting. Sends location information to getWeatherJSON.
+    Gets information and stores in weather object
+     */
     private class SearchTask extends AsyncTask<Location,Void,Void> {
-        //private Bitmap mBitmap;
         private WeatherMarker item;
         private Location mLocation;
         @Override
@@ -322,12 +326,13 @@ public class LocatrFragment extends SupportMapFragment implements GoogleMap.OnMa
             double mLat = item.getLat();
             Log.i("wakitolo Frag", "Lon: " + mLon + " Temp : " + mTem + " Weather " + mWea);
             return null;
-
-
         }
+
+        /*
+        Adds weather to WeatherLab
+         */
         @Override
         protected void onPostExecute(Void result) {
-           // mMapImage = mBitmap;
             mMapItem = item;
             mCurrentLocation = mLocation;
             WeatherLab.get(getContext()).addWeather(mMapItem);
@@ -335,6 +340,9 @@ public class LocatrFragment extends SupportMapFragment implements GoogleMap.OnMa
         }
     }
 
+    /*
+    Gets weather info from website
+     */
     public static JSONObject getWeatherJSON(String lat, String lon){
         try {
             URL url = new URL(String.format(OPEN_WEATHER_MAP_URL, lat, lon));

@@ -8,6 +8,9 @@ import android.database.sqlite.SQLiteOpenHelper;
  * Created by felig on 4/10/2018.
  */
 
+/*
+    Connects app to phone database
+ */
 public class WeatherDBHelper extends SQLiteOpenHelper{
     private static final int VERSION = 1;
     private static final String DATABASE_NAME = "mapBase.db";

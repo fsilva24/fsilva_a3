@@ -7,6 +7,9 @@ import java.util.Date;
  * Created by felig on 4/10/2018.
  */
 
+/*
+    This Class stores the Weathar and Marker info
+ */
 public class WeatherMarker {
     private String mTemperature;
     private String mWeather;
