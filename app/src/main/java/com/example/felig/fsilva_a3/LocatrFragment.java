@@ -1,14 +1,19 @@
 package com.example.felig.fsilva_a3;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.GravityCompat;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -33,8 +38,14 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+import android.support.design.widget.Snackbar;
+import android.widget.RelativeLayout;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -51,19 +62,19 @@ import static android.content.ContentValues.TAG;
  * Created by felig on 4/10/2018.
  */
 
-public class LocatrFragment extends SupportMapFragment {
+public class LocatrFragment extends SupportMapFragment implements GoogleMap.OnMarkerClickListener{
     private GoogleApiClient mClient;
     private GoogleMap mMap;
     private JSONArray weatherJsonObject;
     private JSONObject currWeatherJsonObject;
     private JSONObject mainJsonObject;
     private String mTimeAndDate;
-    private Bitmap mMapImage;
     private WeatherMarker mMapItem;
     private Location mCurrentLocation;
     private String mLatitude;
     private String mLongitude;
     private Date currentTime;
+    private List<WeatherMarker> weatherList;
 
     private static final String OPEN_WEATHER_MAP_URL =
             "http://api.openweathermap.org/data/2.5/weather?lat=%s&lon=%s&units=metric";
@@ -75,9 +86,18 @@ public class LocatrFragment extends SupportMapFragment {
             Manifest.permission.ACCESS_COARSE_LOCATION,
     };
     private static final int REQUEST_LOCATION_PERMISSIONS = 0;
+    private FloatingActionButton mFloatingActionButton;
+    private CoordinatorLayout mContainer;
 
     public static LocatrFragment newInstance() {
         return new LocatrFragment();
+    }
+
+    @Override
+    public boolean onMarkerClick(final Marker marker) {
+        //CoordinatorLayout coordinator = findViewById(R.id.coordinator_layout);
+
+        return false;
     }
 
     @Override
@@ -103,11 +123,66 @@ public class LocatrFragment extends SupportMapFragment {
             @Override
             public void onMapReady(GoogleMap googleMap) {
                 mMap = googleMap;
-                updateUI();
+                mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                    @Override
+                    public boolean onMarkerClick(Marker marker) {
+                        marker.showInfoWindow();
+                        Snackbar snack = Snackbar.make(getView(), marker.getTag().toString(), Snackbar.LENGTH_LONG);
+                        snack.show();
+                        return true;
+                    }
+                });
+                weatherList = WeatherLab.get(getContext()).getMarkers();
+
+                // Looping through list to get all previous markers
+                if (weatherList.size() > 0){
+                    for (int i = 0; i < weatherList.size(); i++){
+                        LatLng myPoint = new LatLng(
+                                weatherList.get(i).getLat(), weatherList.get(i).getLon());
+                        MarkerOptions myMarker = new MarkerOptions()
+                                .position(myPoint)
+                                .title(myPoint.toString());
+
+                        mMap.addMarker(myMarker).setTag("You were here: " + weatherList.get(i).getDateandTime() +
+                                "\nTemp: " + weatherList.get(i).getTemperature() + "(" + weatherList.get(i).getWeather() + ")" );
+                    }
+                }
+
             }
         });
     }
 
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View mapView = super.onCreateView(inflater, container, savedInstanceState);
+        mContainer= new CoordinatorLayout(getActivity());
+        mContainer.addView(mapView);
+        mFloatingActionButton = new FloatingActionButton(getContext());
+        mFloatingActionButton.setImageResource(R.drawable.ic_search_location);
+        mFloatingActionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (checkPermission()) {
+                    findWeather();
+                    Log.d("wakitoli", String.valueOf(weatherList.size()));
+                } else {
+                    requestPermissions(LOCATION_PERMISSIONS, REQUEST_LOCATION_PERMISSIONS);
+                }
+            }
+        });
+        /*mFloatingActionButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                return false;
+            }
+        });*/
+
+        mContainer.addView(mFloatingActionButton);
+        CoordinatorLayout.LayoutParams lp = (CoordinatorLayout.LayoutParams) mFloatingActionButton.getLayoutParams();
+        lp.gravity = Gravity.BOTTOM | Gravity.RIGHT;
+        lp.setMargins(0,0,100,150);
+        mFloatingActionButton.setLayoutParams(lp);
+        return mContainer;
+    }
 
     @Override
     public void onStart() {
@@ -140,6 +215,10 @@ public class LocatrFragment extends SupportMapFragment {
                     requestPermissions(LOCATION_PERMISSIONS,
                             REQUEST_LOCATION_PERMISSIONS);
                 }
+                return true;
+            case R.id.action_delete:
+                WeatherLab.get(getContext()).clearDB();
+                mMap.clear();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -189,9 +268,16 @@ public class LocatrFragment extends SupportMapFragment {
         if (mMap == null || mMapItem == null) {
             return;
         }
-        LatLng itemPoint = new LatLng(Double.parseDouble(mMapItem.getLat()), Double.parseDouble(mMapItem.getLon()));
+        LatLng itemPoint = new LatLng(mMapItem.getLat(), mMapItem.getLon());
         LatLng myPoint = new LatLng(
-                mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+                mMapItem.getLat(), mMapItem.getLon());
+
+        MarkerOptions myMarker = new MarkerOptions()
+                .position(myPoint)
+                .title(myPoint.toString());
+        mMap.addMarker(myMarker).setTag("You were here: " + mMapItem.getDateandTime() + "\nTemp: " + mMapItem.getTemperature() + "(" + mMapItem.getWeather() + ")" );
+        //mMap.setOnMarkerClickListener(this);
+
         LatLngBounds bounds = new LatLngBounds.Builder()
                 .include(itemPoint)
                 .include(myPoint)
@@ -219,21 +305,21 @@ public class LocatrFragment extends SupportMapFragment {
                 weatherJsonObject = jWeather.getJSONArray("weather");
                 currWeatherJsonObject = weatherJsonObject.getJSONObject(0);
                 mainJsonObject = jWeather.getJSONObject("main");
-                item.setLon(coordJsonObject.getString("lon"));
-                item.setLat(coordJsonObject.getString("lat"));
+                item.setLon(mLocation.getLongitude());
+                item.setLat(mLocation.getLatitude());
                 item.setWeather(currWeatherJsonObject.getString("description"));
                 item.setTemperature(mainJsonObject.getString("temp"));
             } catch (JSONException e) {
                 e.printStackTrace();
             }
             currentTime = Calendar.getInstance().getTime();
-            item.setDateandTime(currentTime);
+            item.setDateandTime(currentTime.toString());
             Log.i(TAG, "Got a fix: " + mLocation.getLatitude() + " " +
                     mLocation.getLongitude() + " " + currentTime);
-            String mLon = item.getLon();
+            double mLon = item.getLon();
             String mTem = item.getTemperature();
             String mWea = item.getWeather();
-            String mLat = item.getLat();
+            double mLat = item.getLat();
             Log.i("wakitolo Frag", "Lon: " + mLon + " Temp : " + mTem + " Weather " + mWea);
             return null;
 
@@ -244,6 +330,7 @@ public class LocatrFragment extends SupportMapFragment {
            // mMapImage = mBitmap;
             mMapItem = item;
             mCurrentLocation = mLocation;
+            WeatherLab.get(getContext()).addWeather(mMapItem);
             updateUI();
         }
     }

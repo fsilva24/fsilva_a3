@@ -10,9 +10,9 @@ import java.util.Date;
 public class WeatherMarker {
     private String mTemperature;
     private String mWeather;
-    private Date mDateandTime;
-    private String mLat;
-    private String mLon;
+    private String mDateandTime;
+    private double mLat;
+    private double mLon;
     private UUID mUID;
 
     public WeatherMarker() {
@@ -48,27 +48,27 @@ public class WeatherMarker {
         mWeather = weather;
     }
 
-    public Date getDateandTime() {
+    public String getDateandTime() {
         return mDateandTime;
     }
 
-    public void setDateandTime(Date dateandTime) {
+    public void setDateandTime(String dateandTime) {
         mDateandTime = dateandTime;
     }
 
-    public String getLat() {
+    public double getLat() {
         return mLat;
     }
 
-    public void setLat(String lat) {
+    public void setLat(double lat) {
         mLat = lat;
     }
 
-    public String getLon() {
+    public double getLon() {
         return mLon;
     }
 
-    public void setLon(String lon) {
+    public void setLon(double lon) {
         mLon = lon;
     }
 }
