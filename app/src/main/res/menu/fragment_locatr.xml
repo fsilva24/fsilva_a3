@@ -1,5 +1,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/action_photo"
+        android:title="PHOTOS"
+        app:showAsAction="always"/>
     <item android:id="@+id/action_locate"
         android:icon="@android:drawable/ic_menu_compass"
         android:title="@string/search"
@@ -8,5 +11,8 @@
     <item android:id="@+id/action_delete"
         android:title="Clear Map"
         app:showAsAction="always"/>
+    <item android:id="@+id/menu_item_toggle_polling"
+        android:title="@string/start_polling"
+        app:showAsAction="ifRoom" />
 
 </menu>

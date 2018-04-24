@@ -1,6 +1,7 @@
 package com.example.felig.fsilva_a3;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.AsyncTask;
@@ -18,6 +19,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -69,9 +71,14 @@ public class LocatrFragment extends SupportMapFragment {
 
     private static final String OPEN_WEATHER_MAP_URL =
             "http://api.openweathermap.org/data/2.5/weather?lat=%s&lon=%s&units=metric";
-
+    private static final String FLICKR_URL = "https://api.flickr.com/services/rest/?" +
+            "method=flickr.photos.getRecent&api_key=87ac4cddce0aac88bcf1aa63e871cf6e&format=json&nojsoncallback=1.";
     private static final String OPEN_WEATHER_MAP_API = "cf23f5ce96c15df73c33f44760be0ec9";
+
+
     private static final String TAG = "LocatrFragment";
+
+
     private static final String[] LOCATION_PERMISSIONS = new String[]{
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
@@ -91,7 +98,8 @@ public class LocatrFragment extends SupportMapFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
-        //new FetchItemsTask().execute();
+
+        new FetchItemsTask().execute();
 
         mClient = new GoogleApiClient.Builder(getActivity())
                 .addApi(LocationServices.API)
@@ -189,6 +197,13 @@ public class LocatrFragment extends SupportMapFragment {
         inflater.inflate(R.menu.fragment_locatr, menu);
         MenuItem searchItem = menu.findItem(R.id.action_locate);
         searchItem.setEnabled(mClient.isConnected());
+
+        MenuItem toggleItem = menu.findItem(R.id.menu_item_toggle_polling);
+        if (PollService.isServiceAlarmOn(getActivity())) {
+            toggleItem.setTitle(R.string.stop_polling);
+        } else {
+            toggleItem.setTitle(R.string.start_polling);
+        }
     }
 
     /*
@@ -209,6 +224,13 @@ public class LocatrFragment extends SupportMapFragment {
             case R.id.action_delete:
                 WeatherLab.get(getContext()).clearDB();
                 mMap.clear();
+                return true;
+            case R.id.action_photo:
+                //nothing yet, but want to display the pictures with the markers
+            case R.id.menu_item_toggle_polling:
+                boolean shouldStartAlarm = !PollService.isServiceAlarmOn(getActivity());
+                PollService.setServiceAlarm(getActivity(), shouldStartAlarm);
+                getActivity().invalidateOptionsMenu();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -286,6 +308,14 @@ public class LocatrFragment extends SupportMapFragment {
         int margin = getResources().getDimensionPixelSize(R.dimen.map_inset_margin);
         CameraUpdate update = CameraUpdateFactory.newLatLngBounds(bounds, margin);
         mMap.animateCamera(update);
+    }
+
+    private class FetchItemsTask extends AsyncTask<Void,Void,Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+            new FlickrFetchr().fetchItems();
+            return null;
+        }
     }
 
 
